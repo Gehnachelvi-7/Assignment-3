@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import time
 from torchvision import datasets, transforms
 from custom_resnet import SmallResNet
 
@@ -26,15 +27,21 @@ def count_params(model):
 
 custom_params = count_params(model)
 
+# LOSS + OPTIMIZER
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=1e-3)
 
-# TRAIN + TIME
-import time
-start = time.time()
+# TRAINING
+total_start = time.time()
 
-for epoch in range(3):  # FAST
+num_epochs = 5
+
+for epoch in range(num_epochs):
+    start_time = time.time()
+
     model.train()
+    total_loss = 0
+
     for x, y in train_loader:
         x, y = x.to(device), y.to(device)
 
@@ -44,33 +51,40 @@ for epoch in range(3):  # FAST
         loss.backward()
         optimizer.step()
 
-    print(f"Epoch {epoch+1} done")
+        total_loss += loss.item()
 
-end = time.time()
-train_time = end - start
+    # EVALUATION AFTER EACH EPOCH
+    model.eval()
+    correct, total = 0, 0
 
-# EVALUATE
-model.eval()
-correct, total = 0, 0
+    with torch.no_grad():
+        for x, y in test_loader:
+            x, y = x.to(device), y.to(device)
+            out = model(x)
+            _, pred = out.max(1)
+            total += y.size(0)
+            correct += pred.eq(y).sum().item()
 
-with torch.no_grad():
-    for x, y in test_loader:
-        x, y = x.to(device), y.to(device)
-        out = model(x)
-        _, pred = out.max(1)
-        total += y.size(0)
-        correct += pred.eq(y).sum().item()
+    epoch_acc = 100 * correct / total
+    epoch_time = time.time() - start_time
 
-custom_acc = 100 * correct / total
+    print(f"Epoch {epoch+1}: Loss={total_loss:.2f}, Accuracy={epoch_acc:.2f}%, Time={epoch_time:.2f}s")
 
-print("Custom Accuracy:", custom_acc)
-print("Training Time:", train_time)
+# TOTAL TRAINING TIME
+total_time = time.time() - total_start
+
+# FINAL ACCURACY (already computed in last epoch)
+custom_acc = epoch_acc
+
+print("\nFinal Custom Accuracy:", custom_acc)
+print("Total Training Time:", total_time)
 print("Parameters:", custom_params)
 
-# SAVE EVERYTHING
+# SAVE MODEL
 torch.save(model.state_dict(), "custom_model.pth")
 
+# SAVE RESULTS
 with open("custom_results.txt", "w") as f:
     f.write(f"Accuracy: {custom_acc:.2f}\n")
-    f.write(f"Training Time: {train_time:.2f}\n")
+    f.write(f"Training Time: {total_time:.2f}\n")
     f.write(f"Parameters: {custom_params}\n")

@@ -30,7 +30,7 @@ official_params = count_params(model)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=1e-4)
 
-num_epochs = 3
+num_epochs = 5
 
 for epoch in range(num_epochs):
     start_time = time.time()
