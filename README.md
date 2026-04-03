@@ -1,6 +1,6 @@
 # ResNet Implementation and Comparison - Assignment 3
 
-**Paper:** [Deep Residual Learning for Image Recognition](https://arxiv.org/abs/1512.03385) — He et al., 2015
+**Paper:** [Deep Residual Learning for Image Recognition](https://arxiv.org/abs/1512.03385)
 
 **Blog:** [Understanding ResNet: How Deep Networks Became Trainable](https://deep-residual-networks.blogspot.com/2026/04/understanding-resnet-how-deep-networks.html)
 
