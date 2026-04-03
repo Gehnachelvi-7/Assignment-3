@@ -1,134 +1,105 @@
-# ResNet Implementation and Comparison (Assignment 3)
+# ResNet Implementation and Comparison - Assignment 3
 
-This repository contains the implementation of the paper:
+**Paper:** [Deep Residual Learning for Image Recognition](https://arxiv.org/abs/1512.03385) — He et al., 2015
 
-**Deep Residual Learning for Image Recognition (2015)**
-
-The goal of this assignment is to implement a ResNet architecture from scratch and compare it with an official implementation.
+**Blog:** [Understanding ResNet: How Deep Networks Became Trainable](https://deep-residual-networks.blogspot.com/2026/04/understanding-resnet-how-deep-networks.html)
 
 ---
 
-## Repository Structure
+## Overview
 
-### 🔹 custom_resnet.py
-- Contains the **from-scratch implementation** of ResNet
-- Includes:
-  - Residual Block
-  - Skip connections
-  - Network architecture (SmallResNet)
-- Core idea: replicate residual learning concept
-
----
-
-### 🔹 train_custom.py
-- Trains the custom ResNet model
-- Includes:
-  - Data loading (CIFAR-10)
-  - Training loop
-  - Loss computation
-  - Accuracy evaluation
-- Outputs:
-  - `custom_model.pth`
-  - `custom_results.txt`
-
----
-
-### 🔹 official_eval.py
-- Runs the **official ResNet-18 model (PyTorch)**
-- Uses:
-  - `torchvision.models.resnet18`
-  - Pretrained weights (ImageNet)
-- Fine-tunes on CIFAR-10
-- Compares results with custom model
-
----
-
-### 🔹 gnr_assignment_3.ipynb
-- Google Colab notebook used for:
-  - Running training
-  - Using GPU
-  - Saving results to Drive
-- Contains complete execution pipeline
-
----
-
-### 🔹 GNR_assignment_3_report.pdf
-- Final report of the assignment
-- Includes:
-  - Paper explanation
-  - Implementation details
-  - Results
-  - Comparison
-  - Analysis
-
----
-
-### 🔹 resnet_results/
-Contains all output files:
-
-- `custom_model.pth` → trained custom model  
-- `custom_results.txt` → custom model accuracy, time, parameters  
-- `extra_time.txt` → training time logs  
-- `final_results.txt` → comparison of custom vs official model  
-
----
-
-## Dataset Used
-
-- **CIFAR-10**
-  - 60,000 images
-  - 10 classes
-  - 32×32 resolution
-
-### Why CIFAR-10?
-The original paper uses ImageNet, but due to computational constraints, CIFAR-10 is used as a smaller alternative while keeping the same task (image classification).
-
----
-
-## Methodology
-
-### Custom Implementation
-- Built from scratch
-- Residual connections implemented manually
-- Trained using Adam optimizer
-
-### Official Implementation
-- Used PyTorch ResNet-18
-- Pretrained on ImageNet
-- Fine-tuned on CIFAR-10
+This repository implements the residual learning framework from scratch and compares it against a standard ResNet-18 architecture, both trained on CIFAR-10 under identical conditions. The goal is to reproduce the core ideas of the paper and verify its claims experimentally.
 
 ---
 
 ## Results
 
-| Model | Accuracy | Parameters |
-|------|---------|-----------|
-| Custom ResNet | ~80% | ~2.7M |
-| Official ResNet-18 | ~81% | ~11M |
+| Model | Parameters | Test Accuracy | Training Time |
+|---|---|---|---|
+| **Custom SmallResNet** (ours) | 2,777,674 | **85.04%** | 363.1s |
+| Official ResNet-18 (torchvision) | 11,181,642 | 73.36% | 264.0s |
+
+Both models trained from scratch — no pretrained weights — on CIFAR-10 (10 epochs, T4 GPU).
+
+### Training Curves
+
+![Training Curves](training_curves.png)
+
+Both models converge stably with no degradation — validating the paper's core claim about residual learning.
+
+---
+
+## Why Custom Beats Official ResNet-18
+
+This result is **expected and intentional**, not a bug. ResNet-18 was designed for ImageNet (224×224 images). Its stem layer — a 7×7 conv with stride 2 followed by 3×3 max-pooling with stride 2 — collapses a 32×32 CIFAR-10 image to roughly 4×4 spatial resolution before any residual block even runs. The model has almost no spatial information left to learn from.
+
+The custom SmallResNet uses a 3×3 conv with stride 1 as its stem, preserving the full 32×32 spatial map. This matches the CIFAR-10-specific architecture described in **Section 4.2, Table 6** of the original paper, and is exactly how the authors evaluated residual learning on small images.
+
+---
+
+## Repository Structure
+
+```
+Assignment-3/
+├── custom_resnet.py          # From-scratch ResNet implementation (ResidualBlock + SmallResNet)
+├── train_custom.py           # Trains custom model, saves results and curve data
+├── official_eval.py          # Trains ResNet-18 from scratch, saves comparison
+├── gnr638_assignment_3.ipynb # Full Colab notebook (training + curves + saving)
+├── GNR_assignment_3_report.pdf
+├── custom_model.pth       # Saved custom model weights
+├── custom_results.txt     # Final accuracy, time, params
+├── custom_curves.json     # Per-epoch train loss/acc + test acc
+├── official_curves.json   # Same for official ResNet-18
+├── final_results.txt      # Side-by-side comparison
+└── training_curves.png    # All 3 curves plotted
+```
+
+---
+
+## How to Run
+
+### On Google Colab (recommended)
+Open `gnr638_assignment_3.ipynb` in Colab with GPU runtime. Run all cells — it downloads CIFAR-10, trains both models, plots curves, and saves all result files.
+
+### Locally
+```bash
+pip install torch torchvision matplotlib
+
+# Train custom model first
+python train_custom.py
+
+# Then run official comparison
+python official_eval.py
+```
+
+---
+
+## Implementation Details
+
+### Architecture
+- **ResidualBlock:** Conv3×3 → BN → ReLU → Conv3×3 → BN, with shortcut (identity or 1×1 projection)
+- **SmallResNet:** 3×3 stem (stride 1) → 3 groups of 2 residual blocks (64→128→256 channels) → GAP → FC
+- Projection shortcuts used when stride ≠ 1 or channels change — consistent with the paper
+
+### Training (paper-faithful)
+- SGD, momentum = 0.9, weight decay = 1e-4
+- LR = 0.1, reduced by 10× at epochs 5 and 8
+- Data augmentation: RandomCrop(32, pad=4) + RandomHorizontalFlip + Normalize
+- Batch size = 128, 10 epochs
 
 ---
 
 ## Key Observations
 
-- Residual connections improve training stability  
-- Pretrained models perform better due to transfer learning  
-- Custom model achieves good performance with fewer parameters  
-- Trade-off between efficiency and accuracy  
-
----
-
-## Conclusion
-
-This project demonstrates the effectiveness of residual learning.  
-The custom implementation successfully captures the core idea of ResNet, while the official model shows the advantage of pretraining and deeper architectures.
+1. **Both models benefit from residual connections** — loss decreases monotonically, no degradation
+2. **Architecture must match input scale** — ResNet-18's ImageNet stem is harmful on 32×32 images
+3. **Parameter efficiency matters** — custom model is 4× smaller yet 11.7 points more accurate
+4. **SGD + LR schedule** drives the biggest accuracy jump at epoch 6 (first LR decay)
 
 ---
 
 ## References
 
-- Paper: https://arxiv.org/abs/1512.03385  
-- Original Repo: https://github.com/KaimingHe/deep-residual-networks  
-- PyTorch ResNet: https://github.com/pytorch/vision  
-- Assignment Repo: https://github.com/Gehnachelvi-7/Assignment-3  
-
----
+- Paper: https://arxiv.org/abs/1512.03385
+- Official implementation (Caffe): https://github.com/KaimingHe/deep-residual-networks
+- PyTorch ResNet: https://github.com/pytorch/vision
