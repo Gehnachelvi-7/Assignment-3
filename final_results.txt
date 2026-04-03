@@ -1,0 +1,9 @@
+=== CUSTOM SmallResNet (from scratch) ===
+Accuracy: 85.04%
+Parameters: 2,777,674
+Training Time: 363.09s
+
+=== OFFICIAL ResNet-18 (from scratch) ===
+Accuracy: 73.36%
+Parameters: 11,181,642
+Training Time: 263.97s

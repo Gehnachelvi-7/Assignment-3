@@ -1,3 +1,0 @@
-Accuracy: 79.97
-Training Time: 207.03
-Parameters: 2779914
