@@ -1,0 +1,8 @@
+=== CUSTOM MODEL ===
+Accuracy: 79.97
+Training Time: 207.03
+Parameters: 2779914
+
+=== OFFICIAL MODEL ===
+Accuracy: 81.09
+Parameters: 11181642
